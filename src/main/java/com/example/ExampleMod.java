@@ -8,6 +8,9 @@ import net.minecraft.client.util.InputUtil;
 import net.minecraft.item.Items;
 import net.minecraft.util.Hand;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import org.lwjgl.glfw.GLFW;
 
 public class ExampleMod implements ClientModInitializer {
@@ -17,7 +20,11 @@ public class ExampleMod implements ClientModInitializer {
     // Otomatik yay döngüsü için değişkenler
     private boolean isAutoUsing = false;
     private int bowTickCounter = 0;
-    private final int CHARGE_TICKS = 3; // Okun kaç tick gerileceğini ayarlar (3 idealdir)
+    
+    // Yayın kaç tick boyunca gerileceğini belirler. 
+    // 5 tick çok hızlı atış yapar (Anti-cheat ban yememek için idealdir).
+    // Tam hasarlı ok atmak istersen bu sayıyı 10 yapabilirsin.
+    private final int CHARGE_TICKS = 5; 
 
     @Override
     public void onInitializeClient() {
@@ -41,9 +48,7 @@ public class ExampleMod implements ClientModInitializer {
 
                 // Eğer mod kapatıldıysa yayı bırakıp durumu sıfırla
                 if (!isEnabled && isAutoUsing) {
-                    client.player.stopUsingItem();
-                    isAutoUsing = false;
-                    bowTickCounter = 0;
+                    stopBow(client);
                 }
             }
 
@@ -55,7 +60,7 @@ public class ExampleMod implements ClientModInitializer {
                                  client.player.getStackInHand(Hand.OFF_HAND).isOf(Items.BOW);
 
             if (holdingBow) {
-                // Eğer yay kullanmaya başlamadıysak, sağ tıka basılmış gibi yayı germeye başla
+                // Eğer yay kullanmaya başlamadıysak, otomatik sağ tık basılmış gibi yayı germeye başla
                 if (!isAutoUsing) {
                     client.interactionManager.interactItem(client.player, Hand.MAIN_HAND);
                     isAutoUsing = true;
@@ -64,10 +69,20 @@ public class ExampleMod implements ClientModInitializer {
                     // Yay geriliyorsa tick sayacını artır
                     bowTickCounter++;
 
-                    // Yeterli kadar (3 tick) gerildiyse yayı bırakıp oku fırlat
+                    // Yeterli kadar (5 tick) gerildiyse yayı bırakıp oku fırlat
                     if (bowTickCounter >= CHARGE_TICKS) {
-                        client.player.stopUsingItem(); // Bu komut yayı bırakır ve oku fırlatır
-                        isAutoUsing = false; // Döngüyü başa sarmak için sıfırla
+                        // ÖNEMLİ: Sunucuya "yay bırakıldı" paketini gönderiyoruz ki ok fırlasın
+                        client.player.networkHandler.sendPacket(new PlayerActionC2SPacket(
+                            PlayerActionC2SPacket.Action.RELEASE_USE_ITEM,
+                            BlockPos.ORIGIN,
+                            Direction.DOWN
+                        ));
+                        
+                        // İstemcide de yayı bırakma işlemini bitir
+                        client.player.stopUsingItem();
+                        
+                        // Döngüyü başa sarmak için sıfırla
+                        isAutoUsing = false;
                     }
                 }
 
@@ -79,11 +94,21 @@ public class ExampleMod implements ClientModInitializer {
             } else {
                 // Eğer oyuncu elinden yayı bıraktıysa ama mod açıksa, kullanım durumunu sıfırla
                 if (isAutoUsing) {
-                    client.player.stopUsingItem();
-                    isAutoUsing = false;
-                    bowTickCounter = 0;
+                    stopBow(client);
                 }
             }
         });
+    }
+
+    // Yayı bırakma ve sıfırlama işlemleri için yardımcı metod
+    private void stopBow(net.minecraft.client.MinecraftClient client) {
+        client.player.networkHandler.sendPacket(new PlayerActionC2SPacket(
+            PlayerActionC2SPacket.Action.RELEASE_USE_ITEM,
+            BlockPos.ORIGIN,
+            Direction.DOWN
+        ));
+        client.player.stopUsingItem();
+        isAutoUsing = false;
+        bowTickCounter = 0;
     }
 }
