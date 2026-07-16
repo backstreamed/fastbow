@@ -17,7 +17,7 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: '21'  # Java 25 yerine kararlı sürüm olan Java 21'e çektik
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
