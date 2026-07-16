@@ -2,6 +2,9 @@
   "schemaVersion": 1,
   "id": "fastbow",
   "version": "1.0.0",
+  "name": "Fast Bow",
+  "description": "Hızlı yay atma modu",
+  "authors": ["skatemain"],
   "environment": "client",
   "entrypoints": {
     "client": [
@@ -9,9 +12,9 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=0.14.0",
-    "fabric-api": "*",
-    "minecraft": "~1.20",
-    "java": ">=17"
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.3",
+    "java": ">=21",
+    "fabric-api": "*"
   }
 }
