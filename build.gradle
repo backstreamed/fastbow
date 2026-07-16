@@ -7,21 +7,16 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
-	// Diğer modlara bağımlılık eklemek istersen burayı kullanabilirsin.
 }
 
 loom {
-	// splitEnvironmentSourceSets() kaldırıldı! 
-	// Böylece yazdığımız istemci kodları src/main klasöründe hiçbir hata vermeden derlenebilecek.
 }
 
 dependencies {
-	// Sürümleri gradle.properties dosyasından çeker
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings loom.officialMojangMappings()
+	// İşte o sihirli değişiklik! Resmi mappings yerine bizim yazdığımız koda uyumlu Yarn kütüphanesini çekiyoruz:
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2" 
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Fabric API (1.21.3 için gerekli olan kütüphane)
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
