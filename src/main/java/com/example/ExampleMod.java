@@ -1,3 +1,4 @@
+
 package com.example;
 
 import net.fabricmc.api.ClientModInitializer;
@@ -13,8 +14,6 @@ import org.lwjgl.glfw.GLFW;
 public class ExampleMod implements ClientModInitializer {
     private static KeyBinding toggleKey;
     private boolean isEnabled = false;
-    private int tickCounter = 0;
-    private boolean wasForcedPressed = false;
 
     @Override
     public void onInitializeClient() {
@@ -29,34 +28,29 @@ public class ExampleMod implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.world == null) return;
 
+            // M Tuşuna basıldığında açıp kapatma kontrolü
             while (toggleKey.wasPressed()) {
                 isEnabled = !isEnabled;
                 String status = isEnabled ? "§aAÇIK" : "§cKAPALI";
                 client.player.sendMessage(Text.literal("Hızlı Ok Atma: " + status), true);
-                
-                if (!isEnabled && wasForcedPressed) {
-                    client.options.useKey.setPressed(false);
-                    wasForcedPressed = false;
-                }
             }
 
-            if (isEnabled) {
-                if (client.player.getStackInHand(Hand.MAIN_HAND).isOf(Items.BOW)) {
-                    if (!client.player.isUsingItem()) {
-                        client.options.useKey.setPressed(true);
-                        wasForcedPressed = true;
-                        tickCounter = 0;
-                    } else {
-                        tickCounter++;
-                        if (tickCounter >= 3) {
-                            client.options.useKey.setPressed(false);
-                            wasForcedPressed = false;
-                            tickCounter = 0;
-                        }
-                    }
-                } else if (wasForcedPressed) {
-                    client.options.useKey.setPressed(false);
-                    wasForcedPressed = false;
+            // Eğer mod aktifse ve oyuncu sağ tıka basılı tutuyorsa
+            if (isEnabled && client.options.useKey.isPressed()) {
+                // Oyuncunun elinde yay olup olmadığını kontrol ediyoruz
+                if (client.player.getStackInHand(Hand.MAIN_HAND).isOf(Items.BOW) || 
+                    client.player.getStackInHand(Hand.OFF_HAND).isOf(Items.BOW)) {
+                    
+                    // Sunucuya "yay bırakıldı" (Release) paketini gönderiyoruz.
+                    // Bu sayede yay gerildiği an beklemeden oku fırlatır.
+                    client.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket(
+                        net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket.Action.RELEASE_USE_ITEM,
+                        net.minecraft.util.math.BlockPos.ORIGIN,
+                        net.minecraft.util.math.Direction.DOWN
+                    ));
+                    
+                    // Yayın kullanımını sıfırlıyoruz ki hemen bir sonraki oku germeye başlasın
+                    client.player.stopUsingItem();
                 }
             }
         });
