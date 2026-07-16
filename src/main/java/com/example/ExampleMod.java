@@ -19,6 +19,8 @@ public class ExampleMod implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        System.out.println("FASTBOW MODU YUKLENDI VE CALISTI!"); // Modun yüklendiğini logta görmek için
+
         toggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.fastbow.toggle",
             InputUtil.Type.KEYSYM,
@@ -41,13 +43,9 @@ public class ExampleMod implements ClientModInitializer {
                                  client.player.getStackInHand(Hand.OFF_HAND).isOf(Items.BOW);
 
             if (holdingBow && client.options.useKey.isPressed()) {
-                // Yay kullanım süresini zorla 72000 tick'te (tam gerilmiş) kabul ettir
-                // Önce use başlat, hemen release paketi gönder
                 if (client.player.getItemUseTime() <= 0 && !client.player.isUsingItem()) {
-                    // Sağ tık başlatma paketini gönder (Minecraft bunu normalde yapar ama emin olmak için)
                     client.interactionManager.interactItem(client.player, Hand.MAIN_HAND);
                 } else if (client.player.getItemUseTime() > 0) {
-                    // Yay bırakma paketini gönder, bu oku fırlatır
                     client.player.networkHandler.sendPacket(new PlayerActionC2SPacket(
                         PlayerActionC2SPacket.Action.RELEASE_USE_ITEM,
                         BlockPos.ORIGIN,
